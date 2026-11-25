@@ -33,8 +33,8 @@ function gameBoard() {
 }
 
 function playerManager() {
-  const playerOne = prompt("Player One Name?") || "Player One";
-  const playerTwo = prompt("Player Two Name?") || "Player Two";
+  const playerOne =  "Player One";
+  const playerTwo =  "Player Two";
 
   const players = [
     { name: playerOne, marker: "X" },
@@ -53,3 +53,33 @@ function playerManager() {
 
   return { getCurrentPlayer, switchPlayer, resetPlayer, };
 }
+
+function gameController() {
+  let status;
+
+  const board = gameBoard();
+  const players = playerManager();
+
+  const playMove = (position) => {
+    const moveResult =
+      board.placeMarker(position, players.getCurrentPlayer().marker);
+
+    if (moveResult !== "MOVE_IS_VALID") {
+      return status = moveResult;
+    }
+ 
+    players.switchPlayer();
+
+    return {
+      board: board.getBoardState(),
+      currentPlayer: players.getCurrentPlayer(),
+      status: "IN_PROGRESS"
+    };
+  } 
+  
+  return { playMove };
+}
+
+const { playMove } = controller()
+
+console.log(playMove(1));
