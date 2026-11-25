@@ -31,3 +31,25 @@ function gameBoard() {
 
   return { placeMarker, getBoardState, clearBoard };
 }
+
+function playerManager() {
+  const playerOne = prompt("Player One Name?") || "Player One";
+  const playerTwo = prompt("Player Two Name?") || "Player Two";
+
+  const players = [
+    { name: playerOne, marker: "X" },
+    { name: playerTwo, marker: "O" },
+  ];
+
+  let currentPlayer = players[0];
+
+  const getCurrentPlayer = () => currentPlayer;
+
+  const switchPlayer = () => {
+    currentPlayer = currentPlayer === players[0] ? players[1] : players[0];
+  };
+
+  const resetPlayer = () => { currentPlayer = players[0]; };
+
+  return { getCurrentPlayer, switchPlayer, resetPlayer, };
+}
