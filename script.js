@@ -15,15 +15,28 @@ function gameBoard() {
   const placeMarker = (position, marker) => {
     if (!Number.isInteger(position)
       || position < 1
-      || position > 9) return "INVALID_MOVE";
+      || position > 9) {
+        return {
+          success: false,
+          status: "INVALID_MOVE",
+        };
+      }
     
     const field = board[position - 1];
 
-    if (field.getValue() !== null) return "FIELD_OCCUPIED";
+    if (field.getValue() !== null) {
+      return {
+        success: false,
+        status: "FIELD_OCCUPIED",
+      };
+    }
     
     field.setValue(marker);
 
-    return "MOVE_IS_VALID";
+    return {
+      success: true,
+      status: "MOVE_IS_VALID",
+    };
   }
 
   const getBoardState = () => board.map(field => field.getValue());
@@ -33,8 +46,8 @@ function gameBoard() {
 }
 
 function playerManager() {
-  const playerOne =  "Player One";
-  const playerTwo =  "Player Two";
+  const playerOne =  prompt("Player One Name ?") || "Player One";
+  const playerTwo =  prompt("Player Two Name ?") || "Player Two";
 
   const players = [
     { name: playerOne, marker: "X" },
@@ -55,31 +68,45 @@ function playerManager() {
 }
 
 function gameController() {
-  let status;
-
   const board = gameBoard();
   const players = playerManager();
 
-  const playMove = (position) => {
-    const moveResult =
-      board.placeMarker(position, players.getCurrentPlayer().marker);
+  let status = "IN_PROGRESS";
+  let isGameActive = true;
+  let moveCount = 0;
 
-    if (moveResult !== "MOVE_IS_VALID") {
-      return status = moveResult;
-    }
- 
-    players.switchPlayer();
-
+  const getGameState = (status = "NEW_GAME", moveResult = true) => {
     return {
       board: board.getBoardState(),
       currentPlayer: players.getCurrentPlayer(),
-      status: "IN_PROGRESS"
+      isGameActive,
+      moveCount,
+      moveResult,
+      status,
     };
+  }
+
+  const playMove = (position) => {
+    if (!isGameActive) return getGameState("GAME_OVER", false);
+
+    const moveResult =
+      board.placeMarker(position, players.getCurrentPlayer().marker);
+
+    if (!moveResult.success) {
+      status = moveResult.status;
+      return getGameState(status, false);
+    }
+
+    moveCount++;
+ 
+    players.switchPlayer();
+
+    return { ...getGameState(status, moveResult) };
   } 
   
-  return { playMove };
+  return { playMove, getGameState };
 }
 
-const { playMove } = controller()
+const { playMove, getGameState } = gameController();
 
-console.log(playMove(1));
+console.log(getGameState());
