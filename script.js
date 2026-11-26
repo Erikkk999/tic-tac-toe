@@ -16,27 +16,18 @@ function gameBoard() {
     if (!Number.isInteger(position)
       || position < 1
       || position > 9) {
-        return {
-          success: false,
-          status: "INVALID_MOVE",
-        };
-      }
+        return { success: false, status: "INVALID_MOVE", };
+    }
     
     const field = board[position - 1];
 
     if (field.getValue() !== null) {
-      return {
-        success: false,
-        status: "FIELD_OCCUPIED",
-      };
+      return { success: false, status: "FIELD_OCCUPIED", };
     }
     
     field.setValue(marker);
 
-    return {
-      success: true,
-      status: "MOVE_IS_VALID",
-    };
+    return { success: true, status: "MOVE_IS_VALID", };
   }
 
   const getBoardState = () => board.map(field => field.getValue());
@@ -95,17 +86,17 @@ function gameController() {
     return {
       board: board.getBoardState(),
       currentPlayer: players.getCurrentPlayer(),
-      moveCount,
       gameStatus,
       moveStatus,
+      moveCount,
     };
-  }
+  };
 
   const playMove = (position) => {
     if (!isGameActive()) {
       moveStatus = { success: false, status: "GAME_OVER" };
-      return getGameState()
-    };
+      return getGameState();
+    }
 
     moveStatus =
       board.placeMarker(position, players.getCurrentPlayer().marker);
@@ -160,11 +151,51 @@ function checkGameOver(board) {
   return { winner, isDraw };
 }
 
-const { getGameState, playMove } = gameController();
+function displayRound(gameState) {
+  if (!gameState) return;
 
-console.log(getGameState());
-console.log(playMove(1))
-console.log(playMove(2))
-// console.log(playMove(4))
-// console.log(playMove(5))
-// console.log(playMove(7))
+  const {
+    board,
+    currentPlayer,
+    gameStatus,
+    moveStatus,
+    moveCount,
+  } = gameState;
+
+  if (moveStatus && !moveStatus.success) {
+    console.log(`ERROR: ${moveStatus.status}`);
+    return;
+  }
+
+  let message;
+
+  switch(gameStatus) {
+    case "GAME_WON":
+      message = "Game Over!\n"
+        + `The Winner is [${currentPlayer.marker}] ${currentPlayer.name}.`;
+      break;
+    case "GAME_DRAW":
+      message = "Game Over!\nIt's a Draw.";
+      break;
+    case "NEW_GAME":
+      message = `Game started!\n[${currentPlayer.marker}]`
+        + ` ${currentPlayer.name}'s turn.`;
+      break;
+    default:
+      message = `Move [${moveCount}]\n[${currentPlayer.marker}]`
+        + ` ${currentPlayer.name}'s turn.`;
+  }
+
+  console.log(message);
+
+  const displayBoard =
+    board.map((value, index) => value ?? `${index + 1}`);
+
+  console.log(
+    `| ${displayBoard.slice(0, 3).join(" | ")} | \n–––––––––––––\n` +
+    `| ${displayBoard.slice(3, 6).join(" | ")} | \n–––––––––––––\n` +
+    `| ${displayBoard.slice(6, 9).join(" | ")} |\n `);
+}
+
+const { getGameState, playMove, resetGame } = gameController();
+
