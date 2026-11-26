@@ -42,7 +42,7 @@ function gameBoard() {
   const getBoardState = () => board.map(field => field.getValue());
   const clearBoard = () => board.forEach(field => field.setValue(null)); 
 
-  return { placeMarker, getBoardState, clearBoard };
+  return { getBoardState, placeMarker, clearBoard };
 }
 
 function playerManager() {
@@ -59,7 +59,9 @@ function playerManager() {
   const getCurrentPlayer = () => currentPlayer;
 
   const switchPlayer = () => {
-    currentPlayer = currentPlayer === players[0] ? players[1] : players[0];
+    currentPlayer = currentPlayer === players[0]
+      ? players[1]
+      : players[0];
   };
 
   const resetPlayer = () => { currentPlayer = players[0]; };
@@ -71,42 +73,98 @@ function gameController() {
   const board = gameBoard();
   const players = playerManager();
 
-  let status = "IN_PROGRESS";
-  let isGameActive = true;
+  let gameStatus = "NEW_GAME";
+  let moveStatus = null;
+
+  const isGameActive = () =>
+    ["NEW_GAME", "IN_PROGRESS"].includes(gameStatus);
+
   let moveCount = 0;
 
-  const getGameState = (status = "NEW_GAME", moveResult = true) => {
+  const resetGame = () => {
+    board.clearBoard();
+    players.resetPlayer();
+    gameStatus = "NEW_GAME";
+    moveStatus = null;
+    moveCount = 0;
+    
+    return getGameState();
+  };
+
+  const getGameState = () => {
     return {
       board: board.getBoardState(),
       currentPlayer: players.getCurrentPlayer(),
-      isGameActive,
       moveCount,
-      moveResult,
-      status,
+      gameStatus,
+      moveStatus,
     };
   }
 
   const playMove = (position) => {
-    if (!isGameActive) return getGameState("GAME_OVER", false);
+    if (!isGameActive()) {
+      moveStatus = { success: false, status: "GAME_OVER" };
+      return getGameState()
+    };
 
-    const moveResult =
+    moveStatus =
       board.placeMarker(position, players.getCurrentPlayer().marker);
 
-    if (!moveResult.success) {
-      status = moveResult.status;
-      return getGameState(status, false);
+    if (!moveStatus.success) {
+      return getGameState();
     }
 
-    moveCount++;
- 
-    players.switchPlayer();
+    const boardState = board.getBoardState();
+    const gameResult = checkGameOver(boardState);
 
-    return { ...getGameState(status, moveResult) };
+    moveCount++;
+
+    if (gameResult.winner) {
+      gameStatus = "GAME_WON";
+    } else if (gameResult.isDraw) {
+      gameStatus = "GAME_DRAW";
+    } else {
+      gameStatus = "IN_PROGRESS";
+      players.switchPlayer();
+    }
+
+    return { ...getGameState(), ...gameResult, };
   } 
   
-  return { playMove, getGameState };
+  return { getGameState, playMove, resetGame };
 }
 
-const { playMove, getGameState } = gameController();
+function checkGameOver(board) {
+  const winningCombinations = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+    [0, 4, 8], [2, 4, 6],
+  ];
+
+  const winningCombination =
+    winningCombinations.find((combination) => {
+      const [ firstIndex, secondIndex, thirdIndex ] = combination;
+      const marker = board[firstIndex];
+
+      return marker !== null
+        && board[firstIndex] === board[secondIndex]
+        && board[secondIndex] === board[thirdIndex];
+    });
+
+  const winner = winningCombination
+    ? board[winningCombination[0]]
+    : null;
+
+  const isDraw = !winner && board.every(value => value !== null);
+
+  return { winner, isDraw };
+}
+
+const { getGameState, playMove } = gameController();
 
 console.log(getGameState());
+console.log(playMove(1))
+console.log(playMove(2))
+// console.log(playMove(4))
+// console.log(playMove(5))
+// console.log(playMove(7))
